@@ -95,7 +95,9 @@ jobs:
             # Special case for ScriptManager
             '<asp:ScriptManager[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
             '<asp:ScriptManager[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
-            '<asp:ScriptManager[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*runat\s*=\s*["'']server["'']'
+            '<asp:ScriptManager[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*runat\s*=\s*["'']server["'']',
+            '<asp:ScriptManager[^>]*\brunat\s*=\s*["'']server["''][^>]*>',
+            '<asp:ScriptManager[^>]*>'
           )
           foreach ($pattern in $patterns) {
             $controlMatches += Select-String -InputObject $content -Pattern $pattern -AllMatches
@@ -174,6 +176,19 @@ jobs:
               }
             }
           }
+          
+          # Special handling for ScriptManager - if it exists in the page but wasn't detected
+          if ($content -match '<asp:ScriptManager') {
+            $scriptManagerId = if ($content -match '<asp:ScriptManager[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']') {
+              $matches[1]
+            } else {
+              'ScriptManager1'
+            }
+            if (-not $controls.ContainsKey($scriptManagerId)) {
+              $controls[$scriptManagerId] = 'System.Web.UI.ScriptManager'
+            }
+          }
+          
           if ($controls.Count -gt 0) {
             $lines = @(
               "#pragma warning disable 1591",
