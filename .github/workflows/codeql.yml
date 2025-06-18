@@ -53,6 +53,9 @@ jobs:
       run: |
         choco install netfx-4.7.2-devpack -y
 
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1
+
     - name: Generate designer files
       shell: pwsh
       run: |
@@ -92,9 +95,6 @@ jobs:
           }
         }
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1.1
-
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
       with:
@@ -106,7 +106,7 @@ jobs:
       shell: pwsh
       run: |
         echo "🛠️ Building solution..."
-        msbuild App.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath="bin\Release" /p:GenerateSerializationAssemblies=Auto /p:DebugType=full /p:DebugSymbols=true
+        msbuild App.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath="bin\Release" /p:GenerateSerializationAssemblies=Auto /p:DebugType=full /p:DebugSymbols=true /p:EmitCompilerGeneratedFiles=true /p:CompilerGeneratedFilesOutputPath="GeneratedFiles" /p:UseWPP_CopyWebApplication=true /p:OutDir="bin\Release\" /p:WebProjectOutputDir="bin\Release\" /p:GenerateTargetFrameworkAttribute=false
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
