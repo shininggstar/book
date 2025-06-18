@@ -70,6 +70,14 @@ jobs:
             $className = $baseName -replace '[^a-zA-Z0-9_]', '_'
           }
           $designerPath = "$($page.FullName).designer.cs"
+          
+          # Determine the base class based on file extension
+          $baseClass = switch ($page.Extension.ToLower()) {
+            '.master' { 'System.Web.UI.MasterPage' }
+            '.ascx' { 'System.Web.UI.UserControl' }
+            default { 'System.Web.UI.Page' }
+          }
+          
           # Extract all control declarations with various patterns
           $controlMatches = @()
           $patterns = @(
@@ -163,7 +171,7 @@ jobs:
           if ($controls.Count -gt 0) {
             $lines = @(
               "#pragma warning disable 1591",
-              "public partial class $className : System.Web.UI.Page {",
+              "public partial class $className : $baseClass {",
               ($controls.GetEnumerator() | ForEach-Object { "    protected global::$($_.Value) $($_.Key);" }),
               "}",
               "#pragma warning restore 1591"
