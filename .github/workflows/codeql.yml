@@ -78,7 +78,7 @@ jobs:
     - name: Generate fallback .designer.cs files
       shell: pwsh
       run: |
-                $pages = Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master
+        $pages = Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master
         foreach ($page in $pages) {
           $ext = $page.Extension
           $baseName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name)
