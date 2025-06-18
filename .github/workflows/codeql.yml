@@ -60,7 +60,9 @@ jobs:
       shell: pwsh
       run: |
         $sourcePath = "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Web.Extensions.dll"
-        $targetPath = "bin\System.Web.Extensions.dll"
+        $targetDir = "bin"
+        $targetPath = Join-Path $targetDir "System.Web.Extensions.dll"
+        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
         Copy-Item -Path $sourcePath -Destination $targetPath -Force
         Write-Output "✅ Copied System.Web.Extensions.dll to $targetPath"
 
