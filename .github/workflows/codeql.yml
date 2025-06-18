@@ -96,9 +96,12 @@ jobs:
             foreach ($line in $content) {
               if ($line -match 'id="([^"]+)"[^>]*runat="server"') {
                 $id = $matches[1]
-                $type = "Control"
-                if ($line -match '<asp:(\w+)') { $type = $matches[1] }
-                $ids += "        protected global::System.Web.UI.WebControls.$type $id;"
+                if ($line -match '<asp:(\w+)') {
+                  $type = "System.Web.UI.WebControls.$($matches[1])"
+                } else {
+                  $type = "System.Web.UI.Control"
+                }
+                $ids += "        protected global::$type $id;"
               }
             }
 
