@@ -91,9 +91,9 @@ jobs:
             $content = Get-Content $page.FullName
             $ids = @()
             foreach ($line in $content) {
-              if ($line -match 'id="([^"]+)"[^>]*runat="server"') {
-                $id = $matches[1]
-                if ($line -match 'asp:(\w+)\b') { $type = $matches[1] } else { $type = "Control" }
+              if ($line -match '<asp:(\w+)\s+[^>]*id="([^"]+)"[^>]*runat="server"') {
+                $type = $matches[1]
+                $id = $matches[2]
                 $ids += "        protected global::System.Web.UI.WebControls.$type $id;"
               }
             }
