@@ -2,7 +2,10 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <AssemblyName>App</AssemblyName>
+    <RootNamespace>App</RootNamespace>
   </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="**\*.cs" />
   </ItemGroup>
