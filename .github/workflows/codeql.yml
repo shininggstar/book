@@ -70,19 +70,15 @@ jobs:
           exit 1
         )
 
-    - name: Try generating .designer.cs using aspnet_compiler
+    - name: Install .NET Framework 4.7.2 Developer Pack
       shell: cmd
       run: |
-          echo Current directory is %CD%
-          dir /b *.aspx
-          "C:\Windows\Microsoft.NET\Framework\v4.0.30319\aspnet_compiler.exe" -v / -p "%CD%" "%CD%\precompiledApp" > compile_log.txt 2>&1
-          type compile_log.txt
-          echo Done aspnet_compiler
+          choco install netfx-4.7.2-devpack -y
          
-    - name: Fallback - Generate dummy .designer.cs files if missing
+    - name: Generate fallback .designer.cs files
       shell: pwsh
       run: |
-        $pages = Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master
+                $pages = Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master
         foreach ($page in $pages) {
           $ext = $page.Extension
           $baseName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name)
@@ -100,7 +96,7 @@ jobs:
                   $type = $matches[1]
                   $fullType = "System.Web.UI.WebControls.$type"
                 } else {
-                  $fullType = "System.Web.UI.Control"  # Correct fallback!
+                  $fullType = "System.Web.UI.Control"
                 }
                 $ids += "        protected global::$fullType $id;"
               }
