@@ -65,30 +65,49 @@ jobs:
           $baseName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name)
           $safeName = $baseName -replace '[^a-zA-Z0-9_]', '_'
           $designerPath = "$($page.DirectoryName)\$($baseName)$ext.designer.cs"
-
+          
           if (-not (Test-Path $designerPath)) {
             $content = Get-Content $page.FullName -Raw
-            $matches = Select-String -InputObject $content -Pattern 'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["''][^>]*\brunat\s*=\s*["'']server["'']' -AllMatches
-
-            $ids = @()
-            foreach ($match in $matches.Matches) {
-              $type = $match.Groups[1].Value
-              $id = $match.Groups[2].Value
-              $fullType = "System.Web.UI.WebControls.$type"
-              $ids += "        protected global::$fullType $id;"
+            
+            # Extract all control declarations
+            $controlMatches = @()
+            $controlMatches += Select-String -InputObject $content -Pattern 'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["''][^>]*\brunat\s*=\s*["'']server["'']' -AllMatches
+            $controlMatches += Select-String -InputObject $content -Pattern 'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']' -AllMatches
+            
+            $controls = @{}
+            foreach ($match in $controlMatches) {
+              foreach ($m in $match.Matches) {
+                $type = $m.Groups[1].Value
+                $id = $m.Groups[2].Value
+                if (-not $controls.ContainsKey($id)) {
+                  $fullType = switch ($type.ToLower()) {
+                    'label' { 'System.Web.UI.WebControls.Label' }
+                    'textbox' { 'System.Web.UI.WebControls.TextBox' }
+                    'button' { 'System.Web.UI.WebControls.Button' }
+                    'gridview' { 'System.Web.UI.WebControls.GridView' }
+                    'dropdownlist' { 'System.Web.UI.WebControls.DropDownList' }
+                    'repeater' { 'System.Web.UI.WebControls.Repeater' }
+                    'fileupload' { 'System.Web.UI.WebControls.FileUpload' }
+                    'hyperlink' { 'System.Web.UI.WebControls.HyperLink' }
+                    'scriptmanager' { 'System.Web.UI.ScriptManager' }
+                    default { "System.Web.UI.WebControls.$type" }
+                  }
+                  $controls[$id] = $fullType
+                }
+              }
             }
-
-            if ($ids.Count -gt 0) {
+            
+            if ($controls.Count -gt 0) {
               $lines = @(
                 "#pragma warning disable 1591",
                 "namespace ASP {",
                 "    public partial class $safeName : System.Web.UI.Page {",
-                ($ids | Sort-Object -Unique),
+                ($controls.GetEnumerator() | ForEach-Object { "        protected global::$($_.Value) $($_.Key);" }),
                 "    }",
                 "}",
                 "#pragma warning restore 1591"
               )
-
+              
               Set-Content -Encoding UTF8 -Path $designerPath -Value $lines
               Write-Output "✅ Generated: $designerPath"
             }
