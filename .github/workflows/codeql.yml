@@ -81,18 +81,21 @@ jobs:
           # Extract all control declarations with various patterns
           $controlMatches = @()
           $patterns = @(
+            # Standard ASP.NET controls
             'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["''][^>]*\brunat\s*=\s*["'']server["'']',
             'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
             'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
             'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["'']',
-            'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*runat\s*=\s*["'']server["'']',
-            'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*',
-            'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*',
-            'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["'']\s*',
+            # AJAX controls
+            'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["''][^>]*\brunat\s*=\s*["'']server["'']\s*[^>]*>',
+            'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*[^>]*>',
+            # HTML controls
             '<(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["''][^>]*\brunat\s*=\s*["'']server["'']',
             '<(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
-            '<(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*runat\s*=\s*["'']server["'']',
-            '<(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*'
+            # Special case for ScriptManager
+            '<asp:ScriptManager[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
+            '<asp:ScriptManager[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
+            '<asp:ScriptManager[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*runat\s*=\s*["'']server["'']'
           )
           foreach ($pattern in $patterns) {
             $controlMatches += Select-String -InputObject $content -Pattern $pattern -AllMatches
@@ -105,6 +108,10 @@ jobs:
               $id = $id.Trim()
               if (-not $controls.ContainsKey($id)) {
                 $fullType = switch ($type.ToLower()) {
+                  'scriptmanager' { 'System.Web.UI.ScriptManager' }
+                  'updatepanel' { 'System.Web.UI.UpdatePanel' }
+                  'updateprogress' { 'System.Web.UI.UpdateProgress' }
+                  'timer' { 'System.Web.UI.Timer' }
                   'label' { 'System.Web.UI.WebControls.Label' }
                   'textbox' { 'System.Web.UI.WebControls.TextBox' }
                   'button' { 'System.Web.UI.WebControls.Button' }
@@ -113,7 +120,6 @@ jobs:
                   'repeater' { 'System.Web.UI.WebControls.Repeater' }
                   'fileupload' { 'System.Web.UI.WebControls.FileUpload' }
                   'hyperlink' { 'System.Web.UI.WebControls.HyperLink' }
-                  'scriptmanager' { 'System.Web.UI.ScriptManager' }
                   'datagrid' { 'System.Web.UI.WebControls.DataGrid' }
                   'panel' { 'System.Web.UI.WebControls.Panel' }
                   'literal' { 'System.Web.UI.WebControls.Literal' }
