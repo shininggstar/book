@@ -78,44 +78,50 @@ jobs:
     - name: Generate fallback .designer.cs files
       shell: pwsh
       run: |
-          $pages = Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master
-          foreach ($page in $pages) {
-            $ext = $page.Extension
-            $baseName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name)
-            $safeName = $baseName -replace '[^a-zA-Z0-9_]', '_'
-            $designerPath = "$($page.DirectoryName)\$($baseName)$ext.designer.cs"
+        $pages = Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master
+        foreach ($page in $pages) {
+          $ext = $page.Extension
+          $baseName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name)
+          $safeName = $baseName -replace '[^a-zA-Z0-9_]', '_'
+          $designerPath = "$($page.DirectoryName)\$($baseName)$ext.designer.cs"
 
-            if (-not (Test-Path $designerPath)) {
-              $content = Get-Content $page.FullName
-              $ids = @()
-
-              foreach ($line in $content) {
-                if ($line -match 'id="([^"]+)"[^>]*runat="server"') {
-                  $id = $matches[1]
-                  if ($line -match 'asp:(\w+)\b') {
-                    $type = $matches[1]
-                    $fullType = "System.Web.UI.WebControls.$type"
-                  } else {
-                    $fullType = "System.Web.UI.Control"
-                  }
-                  $ids += "        protected global::$fullType $id;"
+          if ($true) {
+            $content = Get-Content $page.FullName
+            $ids = @()
+            foreach ($line in $content) {
+              if ($line -match 'id="([^"]+)"[^>]*runat="server"') {
+                $id = $matches[1]
+                if ($line -match 'asp:(\w+)\b') {
+                  $type = $matches[1]
+                  $fullType = "System.Web.UI.WebControls.$type"
+                } else {
+                  $fullType = "System.Web.UI.Control"
                 }
+                $ids += "        protected global::$fullType $id;"
               }
-
-              $lines = @(
-                "#pragma warning disable 1591",
-                "namespace ASP {",
-                "    public partial class $safeName : System.Web.UI.Page {",
-                ($ids | Sort-Object -Unique),
-                "    }",
-                "}",
-                "#pragma warning restore 1591"
-              )
-
-              Set-Content -Encoding UTF8 -Path $designerPath -Value $lines
-              Write-Output "✅ Generated: $designerPath"
             }
+
+            $lines = @(
+              "#pragma warning disable 1591",
+              "namespace ASP {",
+              "    public partial class $safeName : System.Web.UI.Page {",
+              ($ids | Sort-Object -Unique),
+              "    }",
+              "}",
+              "#pragma warning restore 1591"
+            )
+
+            Set-Content -Encoding UTF8 -Path $designerPath -Value $lines
+            Write-Output "✅ Generated: $designerPath"
           }
+        }
+
+
+    - name: List generated designer files
+      shell: pwsh
+      run: |
+        Write-Output "📂 Listing generated designer files:"
+        Get-ChildItem -Recurse -Include *.designer.cs | Select-Object FullName
         
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
@@ -142,8 +148,8 @@ jobs:
     - if: matrix.build-mode == 'manual'
       shell: pwsh
       run: |
-         echo "Running real MSBuild build for CodeQL..."
-         msbuild App.csproj /p:Configuration=Release
+        echo "🛠️ Building App.csproj with Release config and output path..."
+        msbuild App.csproj /p:Configuration=Release /p:CompilerGeneratedFilesOutputPath="$(Build.ArtifactStagingDirectory)\Generated"
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
