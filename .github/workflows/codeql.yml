@@ -67,9 +67,11 @@ jobs:
       shell: cmd
       run: |
         echo Current directory is %CD%
-        "C:\Windows\Microsoft.NET\Framework\v4.0.30319\aspnet_compiler.exe" -v / -p "%CD%" "precompiledApp"
+        dir /b *.aspx
+        "C:\Windows\Microsoft.NET\Framework\v4.0.30319\aspnet_compiler.exe" -nologo -v / -p "%CD%" "%CD%\precompiledApp"
+        dir /s /b precompiledApp\*.designer.cs
          
-    - name: Copy real designer files to project root
+    - name: Copy generated .designer.cs files back to root
       shell: pwsh
       run: |
         Get-ChildItem -Recurse -Path "precompiledApp" -Filter *.designer.cs | ForEach-Object {
