@@ -62,6 +62,11 @@ jobs:
     # or others). This is typically only required for manual builds.
     # - name: Setup runtime (example)
     #   uses: actions/setup-example@v1
+
+    - name: Generate .designer.cs files using aspnet_compiler
+      run: |
+         "C:\Windows\Microsoft.NET\Framework\v4.0.30319\aspnet_compiler.exe" -v / -p "$(pwd)" precompiledApp
+      
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
       
