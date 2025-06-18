@@ -73,20 +73,20 @@ jobs:
     - name: Fallback - Generate dummy .designer.cs files if missing
       shell: pwsh
       run: |
-        Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master | ForEach-Object {
-          $baseName = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
-          $ext = $_.Extension.TrimStart('.')
-          $designerFile = "$($_.Directory.FullName)\$baseName.$ext.designer.cs"
-          if (!(Test-Path $designerFile)) {
-            $content = @"
-#pragma warning disable 1591
-public partial class $baseName {
-}
-"@
-            Set-Content -Path $designerFile -Value $content -Encoding UTF8
-            Write-Host "Generated fallback: $designerFile"
-          }
-        }
+         Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master | ForEach-Object {
+           $baseName = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
+           $ext = $_.Extension.TrimStart('.')
+           $designerFile = "$($_.Directory.FullName)\$baseName.$ext.designer.cs"
+           if (!(Test-Path $designerFile)) {
+             $lines = @(
+               '#pragma warning disable 1591',
+               "public partial class $baseName {",
+               '}'
+             )
+             $lines | Set-Content -Encoding UTF8 $designerFile
+             Write-Host "Generated fallback: $designerFile"
+           }
+         }
       
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
