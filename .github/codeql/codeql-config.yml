@@ -10,17 +10,19 @@ queries:
 paths:
   - "**/*.aspx"
   - "**/*.aspx.cs"
+  - "**/*.aspx.designer.cs"
   - "**/*.master"
   - "**/*.master.cs"
+  - "**/*.master.designer.cs"
   - "**/App_Data/**"
   - "**/MY IMAGES/**"
   - "**/MY STYLE/**"
   - "**/web.config"
+  - "**/GeneratedFiles/**"
 
 paths-ignore:
   - "**/*.tmp"
   - "**/*.lnk"
-  - "**/GeneratedFiles/**"
   - "**/bin/**"
   - "**/obj/**"
 
@@ -37,6 +39,8 @@ query-filters:
       tags contain: csharp
   - include:
       tags contain: asp.net
+  - include:
+      tags contain: webforms
 
 # Custom query settings for .NET Framework 3.5
 query-suites:
@@ -51,4 +55,4 @@ analysis:
   memory: 4096
   threads: 4
   build-mode: manual
-  build-command: msbuild App.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath="bin\Release" /p:GenerateSerializationAssemblies=Auto /p:DebugType=full /p:DebugSymbols=true 
+  build-command: msbuild App.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath="bin\Release" /p:GenerateSerializationAssemblies=Auto /p:DebugType=full /p:DebugSymbols=true /p:EmitCompilerGeneratedFiles=true /p:CompilerGeneratedFilesOutputPath="GeneratedFiles" /p:UseWPP_CopyWebApplication=true /p:OutDir="bin\Release\" /p:WebProjectOutputDir="bin\Release\" /p:GenerateTargetFrameworkAttribute=false 
