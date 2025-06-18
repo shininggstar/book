@@ -192,6 +192,9 @@ jobs:
           if ($controls.Count -gt 0) {
             $lines = @(
               "#pragma warning disable 1591",
+              "using System.Web.UI;",
+              "using System.Web.UI.WebControls;",
+              "using System.Web.UI.HtmlControls;",
               "public partial class $className : $baseClass {",
               ($controls.GetEnumerator() | ForEach-Object { "    protected global::$($_.Value) $($_.Key);" }),
               "}",
@@ -213,7 +216,7 @@ jobs:
       shell: pwsh
       run: |
         echo "🛠️ Building solution..."
-        msbuild App.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath="bin\Release" /p:GenerateSerializationAssemblies=Auto /p:DebugType=full /p:DebugSymbols=true /p:EmitCompilerGeneratedFiles=true /p:CompilerGeneratedFilesOutputPath="GeneratedFiles" /p:UseWPP_CopyWebApplication=true /p:OutDir="bin\Release\" /p:WebProjectOutputDir="bin\Release\" /p:GenerateTargetFrameworkAttribute=false
+        msbuild App.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath="bin\Release" /p:GenerateSerializationAssemblies=Auto /p:DebugType=full /p:DebugSymbols=true /p:EmitCompilerGeneratedFiles=true /p:CompilerGeneratedFilesOutputPath="GeneratedFiles" /p:UseWPP_CopyWebApplication=true /p:OutDir="bin\Release\" /p:WebProjectOutputDir="bin\Release\" /p:GenerateTargetFrameworkAttribute=false /p:ReferencePath="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Web.Extensions.dll"
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
