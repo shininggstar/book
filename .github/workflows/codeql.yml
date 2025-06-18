@@ -66,7 +66,7 @@ jobs:
     - name: Generate .designer.cs files using aspnet_compiler
       shell: cmd
       run: |
-         "C:\Windows\Microsoft.NET\Framework\v4.0.30319\aspnet_compiler.exe" -v / -p "$(pwd)" precompiledApp
+         "C:\Windows\Microsoft.NET\Framework\v4.0.30319\aspnet_compiler.exe" -v / -p "%CD%" precompiledApp
       
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
