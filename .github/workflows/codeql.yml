@@ -75,7 +75,11 @@ jobs:
               'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["''][^>]*\brunat\s*=\s*["'']server["'']',
               'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
               'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
-              'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["'']'
+              'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["'']',
+              'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*runat\s*=\s*["'']server["'']',
+              'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*',
+              'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*',
+              'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["'']\s*'
             )
             
             foreach ($pattern in $patterns) {
@@ -88,6 +92,8 @@ jobs:
                 $type = $m.Groups[1].Value
                 $id = if ($m.Groups.Count -gt 2) { $m.Groups[2].Value } else { $type }
                 
+                # Handle case-sensitive control IDs
+                $id = $id.Trim()
                 if (-not $controls.ContainsKey($id)) {
                   $fullType = switch ($type.ToLower()) {
                     'label' { 'System.Web.UI.WebControls.Label' }
@@ -130,6 +136,23 @@ jobs:
                     'completewizardstep' { 'System.Web.UI.WebControls.CompleteWizardStep' }
                     'content' { 'System.Web.UI.WebControls.Content' }
                     'contentplaceholder' { 'System.Web.UI.WebControls.ContentPlaceHolder' }
+                    'html' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
+                    'input' { 'System.Web.UI.HtmlControls.HtmlInputControl' }
+                    'textarea' { 'System.Web.UI.HtmlControls.HtmlTextArea' }
+                    'select' { 'System.Web.UI.HtmlControls.HtmlSelect' }
+                    'table' { 'System.Web.UI.HtmlControls.HtmlTable' }
+                    'tr' { 'System.Web.UI.HtmlControls.HtmlTableRow' }
+                    'td' { 'System.Web.UI.HtmlControls.HtmlTableCell' }
+                    'div' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
+                    'span' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
+                    'form' { 'System.Web.UI.HtmlControls.HtmlForm' }
+                    'head' { 'System.Web.UI.HtmlControls.HtmlHead' }
+                    'body' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
+                    'title' { 'System.Web.UI.HtmlControls.HtmlTitle' }
+                    'meta' { 'System.Web.UI.HtmlControls.HtmlMeta' }
+                    'link' { 'System.Web.UI.HtmlControls.HtmlLink' }
+                    'script' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
+                    'style' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
                     default { "System.Web.UI.WebControls.$type" }
                   }
                   $controls[$id] = $fullType
