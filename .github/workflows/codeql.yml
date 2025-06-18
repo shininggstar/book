@@ -82,7 +82,33 @@ jobs:
     - name: Fallback - Generate dummy .designer.cs files if missing
       shell: pwsh
       run: |
-        $pages = Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master; foreach ($page in $pages) { $ext = $page.Extension; $fileName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name); $safeName = $fileName -replace '[^a-zA-Z0-9_]', '_'; $designerPath = "$($page.DirectoryName)\$($fileName)$ext.designer.cs"; if (-not (Test-Path $designerPath)) { $ids = Select-String -Path $page.FullName -Pattern 'id="([^"]+)"[^>]*runat="server"' | ForEach-Object { ($_ -match 'id="([^"]+)"') | Out-Null; $matches[1] }; $controls = $ids | Sort-Object -Unique | ForEach-Object { "        protected global::System.Web.UI.WebControls.TextBox $_;" }; $lines = @(); $lines += "#pragma warning disable 1591"; $lines += "namespace ASP {"; $lines += "    public partial class $safeName : System.Web.UI.Page {"; $lines += $controls; $lines += "    }"; $lines += "}"; $lines += "#pragma warning restore 1591"; Set-Content -Encoding UTF8 -Path $designerPath -Value $lines; Write-Output "Generated: $designerPath" } }
+        $pages = Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master; foreach ($page in $pages) {
+          $ext = $page.Extension
+          $fileName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name)
+          $safeName = $fileName -replace '[^a-zA-Z0-9_]', '_'
+          $designerPath = "$($page.DirectoryName)\$($fileName)$ext.designer.cs"
+          if (-not (Test-Path $designerPath)) {
+            $content = Get-Content $page.FullName
+            $ids = @()
+            foreach ($line in $content) {
+              if ($line -match 'id="([^"]+)"[^>]*runat="server"') {
+                $id = $matches[1]
+                if ($line -match 'asp:(\w+)\b') { $type = $matches[1] } else { $type = "Control" }
+                $ids += "        protected global::System.Web.UI.WebControls.$type $id;"
+              }
+            }
+            $lines = @()
+            $lines += "#pragma warning disable 1591"
+            $lines += "namespace ASP {"
+            $lines += "    public partial class $safeName : System.Web.UI.Page {"
+            $lines += $ids | Sort-Object -Unique
+            $lines += "    }"
+            $lines += "}"
+            $lines += "#pragma warning restore 1591"
+            Set-Content -Encoding UTF8 -Path $designerPath -Value $lines
+            Write-Output "✅ Generated: $designerPath"
+          }
+        }
         
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
