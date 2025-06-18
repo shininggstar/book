@@ -82,7 +82,7 @@ jobs:
     - name: Fallback - Generate dummy .designer.cs files if missing
       shell: pwsh
       run: |
-        $pages = Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master; foreach ($page in $pages) { $ext = $page.Extension; $fileName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name); $safeName = $fileName -replace '[^a-zA-Z0-9_]', '_'; $designerPath = "$($page.DirectoryName)\$($fileName)$ext.designer.cs"; if (-not (Test-Path $designerPath)) { $content = '#pragma warning disable 1591`nnamespace ASP { public partial class ' + $safeName + ' : System.Web.UI.Page { }}' + "`n#pragma warning restore 1591"; $content | Out-File -Encoding UTF8 -FilePath $designerPath; Write-Output "Generated fallback: $designerPath" } }
+        $pages = Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master; foreach ($page in $pages) { $ext = $page.Extension; $fileName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name); $safeName = $fileName -replace '[^a-zA-Z0-9_]', '_'; $designerPath = "$($page.DirectoryName)\$($fileName)$ext.designer.cs"; if (-not (Test-Path $designerPath)) { $content = '#pragma warning disable 1591`nnamespace ASP { public partial class ' + $safeName + ' { } }`n#pragma warning restore 1591'; $content | Out-File -Encoding UTF8 -FilePath $designerPath; Write-Output "Generated fallback: $designerPath" } }
         
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
