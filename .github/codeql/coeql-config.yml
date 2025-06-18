@@ -1,0 +1,54 @@
+name: "CodeQL Config"
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+  - uses: ./queries
+    with:
+      tag: custom
+
+paths:
+  - "**/*.aspx"
+  - "**/*.aspx.cs"
+  - "**/*.master"
+  - "**/*.master.cs"
+  - "**/App_Data/**"
+  - "**/MY IMAGES/**"
+  - "**/MY STYLE/**"
+  - "**/web.config"
+
+paths-ignore:
+  - "**/*.tmp"
+  - "**/*.lnk"
+  - "**/GeneratedFiles/**"
+  - "**/bin/**"
+  - "**/obj/**"
+
+query-filters:
+  - include:
+      tags contain: security
+  - include:
+      tags contain: correctness
+  - include:
+      tags contain: maintainability
+  - include:
+      tags contain: performance
+  - include:
+      tags contain: csharp
+  - include:
+      tags contain: asp.net
+
+# Custom query settings for .NET Framework 3.5
+query-suites:
+  - security-extended
+  - security-and-quality
+  - csharp-security-extended
+  - csharp-security-and-quality
+
+# Analysis settings
+analysis:
+  timeout: 600
+  memory: 4096
+  threads: 4
+  build-mode: manual
+  build-command: msbuild App.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath="bin\Release" /p:GenerateSerializationAssemblies=Auto /p:DebugType=full /p:DebugSymbols=true 
