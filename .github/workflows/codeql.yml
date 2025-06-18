@@ -66,26 +66,16 @@ jobs:
     - name: Generate .designer.cs files using aspnet_compiler
       shell: cmd
       run: |
-         echo Current directory is %CD%
-         "C:\Windows\Microsoft.NET\Framework\v4.0.30319\aspnet_compiler.exe" -v / -p "D:\a\book\book" "D:\a\book\book\precompiledApp"
-         xcopy /s /y "D:\a\book\book\precompiledApp\*.designer.cs" "D:\a\book\book\"
+        echo Current directory is %CD%
+        "C:\Windows\Microsoft.NET\Framework\v4.0.30319\aspnet_compiler.exe" -v / -p "%CD%" "precompiledApp"
          
-    - name: Fallback - Generate dummy .designer.cs files if missing
+    - name: Copy real designer files to project root
       shell: pwsh
       run: |
-        $pages = Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master
-        foreach ($page in $pages) {
-          $fileName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name)
-          $safeName = $fileName -replace '[^a-zA-Z0-9_]', '_'
-          $designerPath = "$($page.DirectoryName)\$($fileName).designer.cs"
-          if (-not (Test-Path $designerPath)) {
-            $content = "#pragma warning disable 1591`n" +
-                       "namespace ASP { public partial class $safeName : System.Web.UI.Page { } }`n" +
-                       "#pragma warning restore 1591`n"
-            $content | Out-File -FilePath $designerPath -Encoding UTF8
-            Write-Output "Generated fallback: $designerPath"
-          }
+        Get-ChildItem -Recurse -Path "precompiledApp" -Filter *.designer.cs | ForEach-Object {
+          Copy-Item $_.FullName -Destination "$env:GITHUB_WORKSPACE" -Force
         }
+        
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
       
