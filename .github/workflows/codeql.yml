@@ -85,34 +85,34 @@ jobs:
           $safeName = $baseName -replace '[^a-zA-Z0-9_]', '_'
           $designerPath = "$($page.DirectoryName)\$($baseName)$ext.designer.cs"
 
-          if ($true) {
-            $content = Get-Content $page.FullName
+          if (-not (Test-Path $designerPath)) {
+            $content = Get-Content $page.FullName -Raw
+            $matches = Select-String -InputObject $content -Pattern 'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["''][^>]*\brunat\s*=\s*["'']server["'']' -AllMatches
+
             $ids = @()
-            foreach ($line in $content) {
-              if ($line -match 'id="([^"]+)"[^>]*runat="server"') {
-                $id = $matches[1]
-                if ($line -match 'asp:(\w+)\b') {
-                  $type = $matches[1]
-                  $fullType = "System.Web.UI.WebControls.$type"
-                } else {
-                  $fullType = "System.Web.UI.Control"
-                }
-                $ids += "        protected global::$fullType $id;"
-              }
+            foreach ($match in $matches.Matches) {
+              $type = $match.Groups[1].Value
+              $id = $match.Groups[2].Value
+              $fullType = "System.Web.UI.WebControls.$type"
+              $ids += "        protected global::$fullType $id;"
             }
 
-            $lines = @(
-              "#pragma warning disable 1591",
-              "namespace ASP {",
-              "    public partial class $safeName : System.Web.UI.Page {",
-              ($ids | Sort-Object -Unique),
-              "    }",
-              "}",
-              "#pragma warning restore 1591"
-            )
+            if ($ids.Count -gt 0) {
+              $lines = @(
+                "#pragma warning disable 1591",
+                "namespace ASP {",
+                "    public partial class $safeName : System.Web.UI.Page {",
+                ($ids | Sort-Object -Unique),
+                "    }",
+                "}",
+                "#pragma warning restore 1591"
+              )
 
-            Set-Content -Encoding UTF8 -Path $designerPath -Value $lines
-            Write-Output "✅ Generated: $designerPath"
+              Set-Content -Encoding UTF8 -Path $designerPath -Value $lines
+              Write-Output "✅ Generated: $designerPath"
+            } else {
+              Write-Output "⚠️ No server controls found in: $($page.FullName)"
+            }
           }
         }
 
