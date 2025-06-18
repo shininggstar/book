@@ -110,10 +110,10 @@ jobs:
               $id = $id.Trim()
               if (-not $controls.ContainsKey($id)) {
                 $fullType = switch ($type.ToLower()) {
-                  'scriptmanager' { 'System.Web.Extensions.UI.ScriptManager' }
-                  'updatepanel' { 'System.Web.Extensions.UI.UpdatePanel' }
-                  'updateprogress' { 'System.Web.Extensions.UI.UpdateProgress' }
-                  'timer' { 'System.Web.Extensions.UI.Timer' }
+                  'scriptmanager' { 'System.Web.UI.ScriptManager' }
+                  'updatepanel' { 'System.Web.UI.UpdatePanel' }
+                  'updateprogress' { 'System.Web.UI.UpdateProgress' }
+                  'timer' { 'System.Web.UI.Timer' }
                   'label' { 'System.Web.UI.WebControls.Label' }
                   'textbox' { 'System.Web.UI.WebControls.TextBox' }
                   'button' { 'System.Web.UI.WebControls.Button' }
@@ -185,7 +185,7 @@ jobs:
               'ScriptManager1'
             }
             if (-not $controls.ContainsKey($scriptManagerId)) {
-              $controls[$scriptManagerId] = 'System.Web.Extensions.UI.ScriptManager'
+              $controls[$scriptManagerId] = 'System.Web.UI.ScriptManager'
             }
           }
           
@@ -217,7 +217,7 @@ jobs:
       shell: pwsh
       run: |
         echo "🛠️ Building solution..."
-        msbuild App.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath="bin\Release" /p:GenerateSerializationAssemblies=Auto /p:DebugType=full /p:DebugSymbols=true /p:EmitCompilerGeneratedFiles=true /p:CompilerGeneratedFilesOutputPath="GeneratedFiles" /p:UseWPP_CopyWebApplication=true /p:OutDir="bin\Release\" /p:WebProjectOutputDir="bin\Release\" /p:GenerateTargetFrameworkAttribute=false /p:AdditionalLibPaths="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2" /p:AdditionalReferences="System.Web.Extensions.dll" /p:DefineConstants="NETFRAMEWORK"
+        msbuild App.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath="bin\Release" /p:GenerateSerializationAssemblies=Auto /p:DebugType=full /p:DebugSymbols=true /p:EmitCompilerGeneratedFiles=true /p:CompilerGeneratedFilesOutputPath="GeneratedFiles" /p:UseWPP_CopyWebApplication=true /p:OutDir="bin\Release\" /p:WebProjectOutputDir="bin\Release\" /p:GenerateTargetFrameworkAttribute=false /p:AdditionalLibPaths="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2" /p:AdditionalReferences="System.Web.Extensions.dll" /p:DefineConstants="NETFRAMEWORK" /p:ReferencePath="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Web.Extensions.dll"
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
