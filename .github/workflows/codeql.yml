@@ -149,7 +149,7 @@ jobs:
       shell: pwsh
       run: |
         echo "🛠️ Building App.csproj with Release config and output path..."
-        msbuild App.csproj /p:Configuration=Release /p:CompilerGeneratedFilesOutputPath="$(Build.ArtifactStagingDirectory)\Generated"
+        msbuild App.csproj /p:Configuration=Release /p:CompilerGeneratedFilesOutputPath="GeneratedFiles"
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
