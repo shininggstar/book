@@ -83,43 +83,41 @@ jobs:
       shell: pwsh
       run: |
         $pages = Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master
-
         foreach ($page in $pages) {
           $ext = $page.Extension
-          $fileName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name)
-          $safeName = $fileName -replace '[^a-zA-Z0-9_]', '_'
-          $designerPath = "$($page.DirectoryName)\$($fileName)$ext.designer.cs"
+          $baseName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name)
+          $safeName = $baseName -replace '[^a-zA-Z0-9_]', '_'
+          $designerPath = "$($page.DirectoryName)\$($baseName)$ext.designer.cs"
 
           if (-not (Test-Path $designerPath)) {
             $content = Get-Content $page.FullName
             $ids = @()
+
             foreach ($line in $content) {
               if ($line -match 'id="([^"]+)"[^>]*runat="server"') {
                 $id = $matches[1]
-                if ($line -match '<asp:(\w+)') {
-                  $type = "System.Web.UI.WebControls.$($matches[1])"
+                if ($line -match 'asp:(\w+)\b') {
+                  $type = $matches[1]
+                  $fullType = "System.Web.UI.WebControls.$type"
                 } else {
-                  $type = "System.Web.UI.Control"
+                  $fullType = "System.Web.UI.Control"  # Correct fallback!
                 }
-                $ids += "        protected global::$type $id;"
+                $ids += "        protected global::$fullType $id;"
               }
             }
 
-            if ($ids.Count -gt 0) {
-              $lines = @(
-                "#pragma warning disable 1591",
-                "namespace ASP {",
-                "    public partial class $safeName : global::System.Web.UI.Page {"
-              )
-              $lines += ($ids | Sort-Object -Unique)
-              $lines += @(
-                "    }",
-                "}",
-                "#pragma warning restore 1591"
-              )
-              Set-Content -Path $designerPath -Value $lines -Encoding UTF8
-              Write-Output "✅ Generated: $designerPath"
-            }
+            $lines = @(
+              "#pragma warning disable 1591",
+              "namespace ASP {",
+              "    public partial class $safeName : System.Web.UI.Page {",
+              ($ids | Sort-Object -Unique),
+              "    }",
+              "}",
+              "#pragma warning restore 1591"
+            )
+
+            Set-Content -Encoding UTF8 -Path $designerPath -Value $lines
+            Write-Output "✅ Generated: $designerPath"
           }
         }
         
