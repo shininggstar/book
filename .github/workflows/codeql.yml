@@ -64,6 +64,7 @@ jobs:
     #   uses: actions/setup-example@v1
 
     - name: Generate .designer.cs files using aspnet_compiler
+      shell: cmd
       run: |
          "C:\Windows\Microsoft.NET\Framework\v4.0.30319\aspnet_compiler.exe" -v / -p "$(pwd)" precompiledApp
       
