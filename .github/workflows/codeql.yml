@@ -61,123 +61,115 @@ jobs:
       run: |
         $pages = Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master
         foreach ($page in $pages) {
-          $ext = $page.Extension
-          $baseName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name)
-          $safeName = $baseName -replace '[^a-zA-Z0-9_]', '_'
-          $designerPath = "$($page.DirectoryName)\$($baseName)$ext.designer.cs"
-          
-          if (-not (Test-Path $designerPath)) {
-            $content = Get-Content $page.FullName -Raw
-            
-            # Extract all control declarations with various patterns
-            $controlMatches = @()
-            $patterns = @(
-              'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["''][^>]*\brunat\s*=\s*["'']server["'']',
-              'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
-              'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
-              'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["'']',
-              'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*runat\s*=\s*["'']server["'']',
-              'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*',
-              'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*',
-              'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["'']\s*',
-              '<(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["''][^>]*\brunat\s*=\s*["'']server["'']',
-              '<(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
-              '<(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*runat\s*=\s*["'']server["'']',
-              '<(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*'
-            )
-            
-            foreach ($pattern in $patterns) {
-              $controlMatches += Select-String -InputObject $content -Pattern $pattern -AllMatches
-            }
-            
-            $controls = @{}
-            foreach ($match in $controlMatches) {
-              foreach ($m in $match.Matches) {
-                $type = $m.Groups[1].Value
-                $id = if ($m.Groups.Count -gt 2) { $m.Groups[2].Value } else { $type }
-                
-                # Handle case-sensitive control IDs
-                $id = $id.Trim()
-                if (-not $controls.ContainsKey($id)) {
-                  $fullType = switch ($type.ToLower()) {
-                    'label' { 'System.Web.UI.WebControls.Label' }
-                    'textbox' { 'System.Web.UI.WebControls.TextBox' }
-                    'button' { 'System.Web.UI.WebControls.Button' }
-                    'gridview' { 'System.Web.UI.WebControls.GridView' }
-                    'dropdownlist' { 'System.Web.UI.WebControls.DropDownList' }
-                    'repeater' { 'System.Web.UI.WebControls.Repeater' }
-                    'fileupload' { 'System.Web.UI.WebControls.FileUpload' }
-                    'hyperlink' { 'System.Web.UI.WebControls.HyperLink' }
-                    'scriptmanager' { 'System.Web.UI.ScriptManager' }
-                    'datagrid' { 'System.Web.UI.WebControls.DataGrid' }
-                    'panel' { 'System.Web.UI.WebControls.Panel' }
-                    'literal' { 'System.Web.UI.WebControls.Literal' }
-                    'image' { 'System.Web.UI.WebControls.Image' }
-                    'imagebutton' { 'System.Web.UI.WebControls.ImageButton' }
-                    'linkbutton' { 'System.Web.UI.WebControls.LinkButton' }
-                    'checkbox' { 'System.Web.UI.WebControls.CheckBox' }
-                    'radiobutton' { 'System.Web.UI.WebControls.RadioButton' }
-                    'radiobuttonlist' { 'System.Web.UI.WebControls.RadioButtonList' }
-                    'checkboxlist' { 'System.Web.UI.WebControls.CheckBoxList' }
-                    'listbox' { 'System.Web.UI.WebControls.ListBox' }
-                    'calendar' { 'System.Web.UI.WebControls.Calendar' }
-                    'adrotator' { 'System.Web.UI.WebControls.AdRotator' }
-                    'xml' { 'System.Web.UI.WebControls.Xml' }
-                    'placeholder' { 'System.Web.UI.WebControls.PlaceHolder' }
-                    'substitution' { 'System.Web.UI.WebControls.Substitution' }
-                    'wizard' { 'System.Web.UI.WebControls.Wizard' }
-                    'wizardstep' { 'System.Web.UI.WebControls.WizardStep' }
-                    'multiview' { 'System.Web.UI.WebControls.MultiView' }
-                    'view' { 'System.Web.UI.WebControls.View' }
-                    'login' { 'System.Web.UI.WebControls.Login' }
-                    'loginname' { 'System.Web.UI.WebControls.LoginName' }
-                    'loginstatus' { 'System.Web.UI.WebControls.LoginStatus' }
-                    'loginview' { 'System.Web.UI.WebControls.LoginView' }
-                    'passwordrecovery' { 'System.Web.UI.WebControls.PasswordRecovery' }
-                    'changepassword' { 'System.Web.UI.WebControls.ChangePassword' }
-                    'createuserwizard' { 'System.Web.UI.WebControls.CreateUserWizard' }
-                    'createuserwizardstep' { 'System.Web.UI.WebControls.CreateUserWizardStep' }
-                    'completewizardstep' { 'System.Web.UI.WebControls.CompleteWizardStep' }
-                    'content' { 'System.Web.UI.WebControls.Content' }
-                    'contentplaceholder' { 'System.Web.UI.WebControls.ContentPlaceHolder' }
-                    'html' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
-                    'input' { 'System.Web.UI.HtmlControls.HtmlInputControl' }
-                    'textarea' { 'System.Web.UI.HtmlControls.HtmlTextArea' }
-                    'select' { 'System.Web.UI.HtmlControls.HtmlSelect' }
-                    'table' { 'System.Web.UI.HtmlControls.HtmlTable' }
-                    'tr' { 'System.Web.UI.HtmlControls.HtmlTableRow' }
-                    'td' { 'System.Web.UI.HtmlControls.HtmlTableCell' }
-                    'div' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
-                    'span' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
-                    'form' { 'System.Web.UI.HtmlControls.HtmlForm' }
-                    'head' { 'System.Web.UI.HtmlControls.HtmlHead' }
-                    'body' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
-                    'title' { 'System.Web.UI.HtmlControls.HtmlTitle' }
-                    'meta' { 'System.Web.UI.HtmlControls.HtmlMeta' }
-                    'link' { 'System.Web.UI.HtmlControls.HtmlLink' }
-                    'script' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
-                    'style' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
-                    default { "System.Web.UI.WebControls.$type" }
-                  }
-                  $controls[$id] = $fullType
+          $content = Get-Content $page.FullName -Raw
+          # Extract the Inherits attribute for the class name
+          if ($content -match 'Inherits="([^"]+)"') {
+            $className = $matches[1]
+          } else {
+            $baseName = [System.IO.Path]::GetFileNameWithoutExtension($page.Name)
+            $className = $baseName -replace '[^a-zA-Z0-9_]', '_'
+          }
+          $designerPath = "$($page.FullName).designer.cs"
+          # Extract all control declarations with various patterns
+          $controlMatches = @()
+          $patterns = @(
+            'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["''][^>]*\brunat\s*=\s*["'']server["'']',
+            'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
+            'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
+            'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["'']',
+            'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*runat\s*=\s*["'']server["'']',
+            'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*',
+            'asp:(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*',
+            'asp:(\w+)[^>]*\brunat\s*=\s*["'']server["'']\s*',
+            '<(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["''][^>]*\brunat\s*=\s*["'']server["'']',
+            '<(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']',
+            '<(\w+)[^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*runat\s*=\s*["'']server["'']',
+            '<(\w+)[^>]*\brunat\s*=\s*["'']server["''][^>]*\bid\s*=\s*["'']([^"''\s]+)["'']\s*'
+          )
+          foreach ($pattern in $patterns) {
+            $controlMatches += Select-String -InputObject $content -Pattern $pattern -AllMatches
+          }
+          $controls = @{}
+          foreach ($match in $controlMatches) {
+            foreach ($m in $match.Matches) {
+              $type = $m.Groups[1].Value
+              $id = if ($m.Groups.Count -gt 2) { $m.Groups[2].Value } else { $type }
+              $id = $id.Trim()
+              if (-not $controls.ContainsKey($id)) {
+                $fullType = switch ($type.ToLower()) {
+                  'label' { 'System.Web.UI.WebControls.Label' }
+                  'textbox' { 'System.Web.UI.WebControls.TextBox' }
+                  'button' { 'System.Web.UI.WebControls.Button' }
+                  'gridview' { 'System.Web.UI.WebControls.GridView' }
+                  'dropdownlist' { 'System.Web.UI.WebControls.DropDownList' }
+                  'repeater' { 'System.Web.UI.WebControls.Repeater' }
+                  'fileupload' { 'System.Web.UI.WebControls.FileUpload' }
+                  'hyperlink' { 'System.Web.UI.WebControls.HyperLink' }
+                  'scriptmanager' { 'System.Web.UI.ScriptManager' }
+                  'datagrid' { 'System.Web.UI.WebControls.DataGrid' }
+                  'panel' { 'System.Web.UI.WebControls.Panel' }
+                  'literal' { 'System.Web.UI.WebControls.Literal' }
+                  'image' { 'System.Web.UI.WebControls.Image' }
+                  'imagebutton' { 'System.Web.UI.WebControls.ImageButton' }
+                  'linkbutton' { 'System.Web.UI.WebControls.LinkButton' }
+                  'checkbox' { 'System.Web.UI.WebControls.CheckBox' }
+                  'radiobutton' { 'System.Web.UI.WebControls.RadioButton' }
+                  'radiobuttonlist' { 'System.Web.UI.WebControls.RadioButtonList' }
+                  'checkboxlist' { 'System.Web.UI.WebControls.CheckBoxList' }
+                  'listbox' { 'System.Web.UI.WebControls.ListBox' }
+                  'calendar' { 'System.Web.UI.WebControls.Calendar' }
+                  'adrotator' { 'System.Web.UI.WebControls.AdRotator' }
+                  'xml' { 'System.Web.UI.WebControls.Xml' }
+                  'placeholder' { 'System.Web.UI.WebControls.PlaceHolder' }
+                  'substitution' { 'System.Web.UI.WebControls.Substitution' }
+                  'wizard' { 'System.Web.UI.WebControls.Wizard' }
+                  'wizardstep' { 'System.Web.UI.WebControls.WizardStep' }
+                  'multiview' { 'System.Web.UI.WebControls.MultiView' }
+                  'view' { 'System.Web.UI.WebControls.View' }
+                  'login' { 'System.Web.UI.WebControls.Login' }
+                  'loginname' { 'System.Web.UI.WebControls.LoginName' }
+                  'loginstatus' { 'System.Web.UI.WebControls.LoginStatus' }
+                  'loginview' { 'System.Web.UI.WebControls.LoginView' }
+                  'passwordrecovery' { 'System.Web.UI.WebControls.PasswordRecovery' }
+                  'changepassword' { 'System.Web.UI.WebControls.ChangePassword' }
+                  'createuserwizard' { 'System.Web.UI.WebControls.CreateUserWizard' }
+                  'createuserwizardstep' { 'System.Web.UI.WebControls.CreateUserWizardStep' }
+                  'completewizardstep' { 'System.Web.UI.WebControls.CompleteWizardStep' }
+                  'content' { 'System.Web.UI.WebControls.Content' }
+                  'contentplaceholder' { 'System.Web.UI.WebControls.ContentPlaceHolder' }
+                  'html' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
+                  'input' { 'System.Web.UI.HtmlControls.HtmlInputControl' }
+                  'textarea' { 'System.Web.UI.HtmlControls.HtmlTextArea' }
+                  'select' { 'System.Web.UI.HtmlControls.HtmlSelect' }
+                  'table' { 'System.Web.UI.HtmlControls.HtmlTable' }
+                  'tr' { 'System.Web.UI.HtmlControls.HtmlTableRow' }
+                  'td' { 'System.Web.UI.HtmlControls.HtmlTableCell' }
+                  'div' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
+                  'span' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
+                  'form' { 'System.Web.UI.HtmlControls.HtmlForm' }
+                  'head' { 'System.Web.UI.HtmlControls.HtmlHead' }
+                  'body' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
+                  'title' { 'System.Web.UI.HtmlControls.HtmlTitle' }
+                  'meta' { 'System.Web.UI.HtmlControls.HtmlMeta' }
+                  'link' { 'System.Web.UI.HtmlControls.HtmlLink' }
+                  'script' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
+                  'style' { 'System.Web.UI.HtmlControls.HtmlGenericControl' }
+                  default { "System.Web.UI.WebControls.$type" }
                 }
+                $controls[$id] = $fullType
               }
             }
-            
-            if ($controls.Count -gt 0) {
-              $lines = @(
-                "#pragma warning disable 1591",
-                "namespace ASP {",
-                "    public partial class $safeName : System.Web.UI.Page {",
-                ($controls.GetEnumerator() | ForEach-Object { "        protected global::$($_.Value) $($_.Key);" }),
-                "    }",
-                "}",
-                "#pragma warning restore 1591"
-              )
-              
-              Set-Content -Encoding UTF8 -Path $designerPath -Value $lines
-              Write-Output "✅ Generated: $designerPath"
-            }
+          }
+          if ($controls.Count -gt 0) {
+            $lines = @(
+              "#pragma warning disable 1591",
+              "public partial class $className : System.Web.UI.Page {",
+              ($controls.GetEnumerator() | ForEach-Object { "    protected global::$($_.Value) $($_.Key);" }),
+              "}",
+              "#pragma warning restore 1591"
+            )
+            Set-Content -Encoding UTF8 -Path $designerPath -Value $lines
+            Write-Output "✅ Generated: $designerPath"
           }
         }
 
