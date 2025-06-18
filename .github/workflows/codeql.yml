@@ -69,6 +69,23 @@ jobs:
          echo Current directory is %CD%
          "C:\Windows\Microsoft.NET\Framework\v4.0.30319\aspnet_compiler.exe" -v / -p "D:\a\book\book" "D:\a\book\book\precompiledApp"
          xcopy /s /y "D:\a\book\book\precompiledApp\*.designer.cs" "D:\a\book\book\"
+         
+    - name: Fallback: Generate dummy .designer.cs files if missing
+      shell: pwsh
+      run: |
+        Get-ChildItem -Recurse -Include *.aspx,*.ascx,*.master | ForEach-Object {
+          $baseName = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
+          $ext = $_.Extension.TrimStart('.')
+          $designerFile = "$($_.Directory.FullName)\$baseName.$ext.designer.cs"
+          if (!(Test-Path $designerFile)) {
+            Write-Host "Generating fallback designer file: $designerFile"
+            '@
+#pragma warning disable 1591
+public partial class ' + $baseName + ' {
+}
+@' | Set-Content -Encoding UTF8 $designerFile
+          }
+        }
       
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
