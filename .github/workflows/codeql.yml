@@ -192,19 +192,20 @@ jobs:
             # Try to find all ScriptManager controls and their IDs
             $scriptManagerPattern = '<asp:ScriptManager[^>]*((id|ID)\s*=\s*["'']([^"''\s]+)["''])?[^>]*>'
             $scriptManagerMatches = [regex]::Matches($content, $scriptManagerPattern)
+            $hasScriptManagerField = $false
             if ($scriptManagerMatches.Count -gt 0) {
               foreach ($sm in $scriptManagerMatches) {
                 $id = $sm.Groups[3].Value
                 if ([string]::IsNullOrWhiteSpace($id)) { $id = 'ScriptManager1' }
+                if ($id -eq 'ScriptManager') { $hasScriptManagerField = $true }
                 if (-not $controls.ContainsKey($id)) {
                   $controls[$id] = 'System.Web.UI.ScriptManager'
                 }
               }
-            } else {
-              # Fallback: add ScriptManager1 if no ID found at all
-              if (-not $controls.ContainsKey('ScriptManager1')) {
-                $controls['ScriptManager1'] = 'System.Web.UI.ScriptManager'
-              }
+            }
+            # Always add a field named 'ScriptManager' if not already present
+            if (-not $controls.ContainsKey('ScriptManager')) {
+              $controls['ScriptManager'] = 'System.Web.UI.ScriptManager'
             }
           }
           
