@@ -205,7 +205,6 @@ jobs:
               "using System.Web.UI;",
               "using System.Web.UI.WebControls;",
               "using System.Web.UI.HtmlControls;",
-              "using System.Web.Extensions.UI;",
               "public partial class $className : $baseClass {",
               ($controls.GetEnumerator() | ForEach-Object { "    protected global::$($_.Value) $($_.Key);" }),
               "}",
