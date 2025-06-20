@@ -3,9 +3,6 @@ name: "CodeQL Config"
 queries:
   - uses: security-extended
   - uses: security-and-quality
-  - uses: ./queries
-    with:
-      tag: custom
 
 paths:
   - "**/*.aspx"
