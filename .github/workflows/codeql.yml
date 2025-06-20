@@ -63,6 +63,12 @@ jobs:
         queries: security-extended,security-and-quality
         config-file: ./.github/codeql/codeql-config.yml
 
+    - name: Build with MSBuild
+      shell: pwsh
+      run: |
+        echo "🛠️ Building solution..."
+        msbuild App.csproj /p:Configuration=Release /p:Platform="Any CPU"
+
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
       with:
