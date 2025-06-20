@@ -187,26 +187,20 @@ jobs:
             }
           }
           
-          # Special handling for ScriptManager - if it exists in the page but wasn't detected
+          # Special handling for ScriptManager - always declare only 'ScriptManager' field
           if ($content -match '<asp:ScriptManager') {
-            # Try to find all ScriptManager controls and their IDs
-            $scriptManagerPattern = '<asp:ScriptManager[^>]*((id|ID)\s*=\s*["'']([^"''\s]+)["''])?[^>]*>'
-            $scriptManagerMatches = [regex]::Matches($content, $scriptManagerPattern)
-            $hasScriptManagerField = $false
-            if ($scriptManagerMatches.Count -gt 0) {
-              foreach ($sm in $scriptManagerMatches) {
-                $id = $sm.Groups[3].Value
-                if ([string]::IsNullOrWhiteSpace($id)) { $id = 'ScriptManager1' }
-                if ($id -eq 'ScriptManager') { $hasScriptManagerField = $true }
-                if (-not $controls.ContainsKey($id)) {
-                  $controls[$id] = 'System.Web.UI.ScriptManager'
-                }
+            # Remove any ScriptManager fields with other IDs
+            $keysToRemove = @()
+            foreach ($key in $controls.Keys) {
+              if ($controls[$key] -eq 'System.Web.UI.ScriptManager' -and $key -ne 'ScriptManager') {
+                $keysToRemove += $key
               }
             }
-            # Always add a field named 'ScriptManager' if not already present
-            if (-not $controls.ContainsKey('ScriptManager')) {
-              $controls['ScriptManager'] = 'System.Web.UI.ScriptManager'
+            foreach ($key in $keysToRemove) {
+              $controls.Remove($key)
             }
+            # Always add a field named 'ScriptManager'
+            $controls['ScriptManager'] = 'System.Web.UI.ScriptManager'
           }
           
           if ($controls.Count -gt 0) {
